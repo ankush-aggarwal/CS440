@@ -21,7 +21,7 @@ using namespace std;
 int start_row; //start row position
 int start_column; //start column position
 int expanded = 0; //counts number of expanded nodes
-int final_steps = 0;
+int final_steps = 0; holds number of steps taken to get to goal
 maze_block mazeArray[50][50]; //static array to hold maze info
 
 void parse_string(string& buffer, int rowNumber)
