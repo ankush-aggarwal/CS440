@@ -1,6 +1,13 @@
 // ConsoleApplication1.cpp : Defines the entry point for the console application.
 //
-
+/*
+/*BFS expands nodes in the following order if there is a tie
+up -> right -> down -> left
+Changing this does not really affect the output since BFS is optimal
+DFS expands nodes in the following order if there is a tie
+left -> down -> right -> up
+Changing this order considerably changes the output we get in DFS since DFS is not optimal.
+*/
 #include "stdafx.h"
 #include "maze.h"
 #include <iostream>
