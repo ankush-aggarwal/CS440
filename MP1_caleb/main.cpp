@@ -259,10 +259,10 @@ int main()
 	{
 		for (int j = 0; j < mazeColumns; j++)
 		{
-			if (mazeArray[i][j].goal == true)
-				OutFile << '.';
-			else if (mazeArray[i][j].start == true)
+			if (mazeArray[i][j].start == true)
 				OutFile << 'P';
+			else if (mazeArray[i][j].goal == true)
+				OutFile << '.';
 			else if (mazeArray[i][j].wall == true)
 				OutFile << '%';
 			else if (mazeArray[i][j].open == true)
