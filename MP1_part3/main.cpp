@@ -53,6 +53,7 @@ class ComparePointAStar {
 
 int get_ghostCol(int cost) {
 	
+	ghost_direction = 1;
 	int cur_ghost_column = ghost_column;
 	for (int i = 0; i < cost; i++) {
 		if (ghost_direction == 1) {
@@ -196,7 +197,6 @@ void input_maze_with_ghosts(string filename){
 
 	int cur_row = 0;
 	string line;
-	ghost_length = 0;
 	if (file.is_open()) {
 		while(getline(file,line)){
 			for(int cur_col=0;cur_col<(int)line.length();cur_col++){
@@ -454,6 +454,8 @@ void astar_search_with_ghosts() {
 			break;
 		}
 		
+		if (p->row == 5 && p->col == 13) {
+		}
 		/* if collided with ghost, skip to next best node on the frontier */
 		if (p->row == ghost_row && p->col == get_ghostCol(p->cost)) {
 			continue;
