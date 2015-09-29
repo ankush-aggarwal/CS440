@@ -625,7 +625,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/bigGhost.txt");
 	astar_search_with_ghosts(true);
-	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost_wait_enable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -650,7 +650,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/bigGhost.txt");
 	astar_search_with_ghosts(false);
-	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost_wait_disable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -693,7 +693,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
 	astar_search_with_ghosts(true);
-	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost_wait_enable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -718,7 +718,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
 	astar_search_with_ghosts(false);
-	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost_wait_disable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -761,7 +761,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
 	astar_search_with_ghosts(true);
-	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost_wait_enable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -786,7 +786,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
 	astar_search_with_ghosts(false);
-	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost_wait_disable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -828,7 +828,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/smallGhost.txt");
 	astar_search_with_ghosts(true);
-	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost_wait_enable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
@@ -853,7 +853,7 @@ int main(){
 	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/smallGhost.txt");
 	astar_search_with_ghosts(false);
-	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost.txt");
+	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost_wait_disable.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
 			delete [] maze_ghosts[i][j];
