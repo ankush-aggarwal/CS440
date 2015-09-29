@@ -29,9 +29,13 @@ struct dimension {
 point*** maze_ghosts;
 point** maze;
 
-int ghost_length, ghost_row, ghost_column;
+int max_ghost_length, ghost_row;
 
 int ghost_direction = 1; /* 0 for left, 1 for right*/
+
+int number_of_ghosts;
+int* ghost_row_array;
+int* ghost_col_array;
 
 /* Returns true if cost of p1 is greater than p2, used for priority queue */
 class ComparePointGreedy {
@@ -51,31 +55,44 @@ class ComparePointAStar {
     }
 };
 
-int get_ghostCol(int cost) {
+int get_ghostCol(int cost, int row) {
 	
 	ghost_direction = 1;
-	int cur_ghost_column = ghost_column;
-	for (int i = 0; i < cost; i++) {
-		if (ghost_direction == 1) {
-			if (maze_ghosts[ghost_row][cur_ghost_column+1][0].type == WALL) {
-				//change  movement to left and move left after hitting wall
-				ghost_direction = 0;
-				cur_ghost_column--;
-			} else {
-				cur_ghost_column++;
-			}
-		} else {
-			if (maze_ghosts[ghost_row][cur_ghost_column-1][0].type == WALL) {
-				//change  movement to right and move right after hitting wall
-				ghost_direction = 1;
-				cur_ghost_column++;
-			} else {
-				cur_ghost_column--;
-			}
+	int index = -1;
+	
+	for (int i = 0; i<number_of_ghosts; i++) {
+		if (ghost_row_array[i] == row) {
+			index = i;
 		}
 	}
 	
-	return cur_ghost_column;
+	
+	if (index != -1) {
+		int cur_ghost_column = ghost_col_array[index];
+		for (int i = 0; i < cost; i++) {
+			if (ghost_direction == 1) {
+				if (maze_ghosts[ghost_row_array[index]][cur_ghost_column+1][0].type == WALL) {
+					//change  movement to left and move left after hitting wall
+					ghost_direction = 0;
+					cur_ghost_column--;
+				} else {
+					cur_ghost_column++;
+				}
+			} else {
+				if (maze_ghosts[ghost_row_array[index]][cur_ghost_column-1][0].type == WALL) {
+					//change  movement to right and move right after hitting wall
+					ghost_direction = 1;
+					cur_ghost_column++;
+				} else {
+					cur_ghost_column--;
+				}
+			}
+		}
+		
+		return cur_ghost_column;
+	}
+	else
+		return -1;
 }
 
 void get_maze_dimensions(string filename){
@@ -123,15 +140,20 @@ void get_maze_dimensions_with_ghosts(string filename){
 	ifstream file2(filename);
 	
 	int cur_row = 0;
+	int ghost_length = 0;
 	string line2;
-	ghost_length = 0;
+	number_of_ghosts = 0;
 	if (file2.is_open()){
 		while(getline(file2,line2)){
+			if (ghost_length > max_ghost_length) {
+				max_ghost_length = ghost_length;
+			}
+			ghost_length = 0;
 			for(int cur_col=0;cur_col<(int)line2.length();cur_col++){
 				 if(line2[cur_col] == 'G') {
 					ghost_length++;
-					ghost_row = cur_row;
-					ghost_column = cur_col;
+					number_of_ghosts++;
+
 				}
 				else if(line2[cur_col] == 'g'){
 					ghost_length++;
@@ -142,7 +164,7 @@ void get_maze_dimensions_with_ghosts(string filename){
 		file2.close();
 	}
 	
-	maze_ghosts_dimensions.ghost_possibleStates = 2*ghost_length - 2;
+	maze_ghosts_dimensions.ghost_possibleStates = 2*max_ghost_length - 2;
 
 	return;
 }
@@ -194,6 +216,8 @@ void input_maze(string filename){
 void input_maze_with_ghosts(string filename){
 
 	ifstream file(filename);
+	
+	int ghost_index = 0;
 
 	int cur_row = 0;
 	string line;
@@ -221,6 +245,9 @@ void input_maze_with_ghosts(string filename){
 					start.col = cur_col;
 				}
 				else if(line[cur_col] == 'G'){
+					ghost_row_array[ghost_index] = cur_row;
+					ghost_col_array[ghost_index] = cur_col;
+					ghost_index++;
 					p.type = GHOST;
 					
 				}
@@ -429,7 +456,7 @@ void astar_search(){
 	}
 }
 
-void astar_search_with_ghosts() {
+void astar_search_with_ghosts(bool wait_enable) {
 
 	priority_queue<point*, vector<point*>, ComparePointAStar> pq;
 
@@ -454,15 +481,13 @@ void astar_search_with_ghosts() {
 			break;
 		}
 		
-		if (p->row == 5 && p->col == 13) {
-		}
 		/* if collided with ghost, skip to next best node on the frontier */
-		if (p->row == ghost_row && p->col == get_ghostCol(p->cost)) {
+		if (p->col == get_ghostCol(p->cost, p->row)) {
 			continue;
 		}
 		 
 		/* if passed through ghost, skip to next best node on the frontier */
-		if ((p->row == ghost_row) && (p->col == get_ghostCol(p->cost - 1)) && ((p->prev)->col == get_ghostCol(p->cost))) {
+		if ((p->col == get_ghostCol(p->cost - 1, p->row)) && ((p->prev)->col == get_ghostCol(p->cost, p->row))) {
 			continue;
 		}
 		/* expand the node */
@@ -549,24 +574,28 @@ void astar_search_with_ghosts() {
 			}
 		}
 		
-		/* try waiting at current spot */
-		/* Don't wait if already visited that ghost state before at this pos*/
-		if(maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].explored == false) {
-			
-			if(maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].on_frontier){
-				/* if already on the forntier and the path cost is less, update it */
-				if((p->cost+1) < maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost){
-					maze_ghosts[p->row-1][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost = p->cost+1;
-					maze_ghosts[p->row-1][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].prev = p;
+		/* check if waiting at spot is enabled*/
+		if (wait_enable) {
+		
+			/* try waiting at current spot */
+			/* Don't wait if already visited that ghost state before at this pos*/
+			if(maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].explored == false) {
+				
+				if(maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].on_frontier){
+					/* if already on the forntier and the path cost is less, update it */
+					if((p->cost+1) < maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost){
+						maze_ghosts[p->row-1][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost = p->cost+1;
+						maze_ghosts[p->row-1][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].prev = p;
+					}
 				}
-			}
-			else {
-				/* calculate the heuristic and add to frontier */
-				maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].heuristic = abs(goal.row - maze_ghosts[p->row][p->col][0].row) + abs(goal.col - maze_ghosts[p->row][p->col][0].col);
-				maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].on_frontier = true;
-				maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost = p->cost+1;
-				maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].prev = p;
-				pq.push(&maze_ghosts[p->row][p->col][(p->cost +1)%maze_ghosts_dimensions.ghost_possibleStates]);
+				else {
+					/* calculate the heuristic and add to frontier */
+					maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].heuristic = abs(goal.row - maze_ghosts[p->row][p->col][0].row) + abs(goal.col - maze_ghosts[p->row][p->col][0].col);
+					maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].on_frontier = true;
+					maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].cost = p->cost+1;
+					maze_ghosts[p->row][p->col][(p->cost + 1)%maze_ghosts_dimensions.ghost_possibleStates].prev = p;
+					pq.push(&maze_ghosts[p->row][p->col][(p->cost +1)%maze_ghosts_dimensions.ghost_possibleStates]);
+				}
 			}
 		}
 	}
@@ -580,9 +609,9 @@ void astar_search_with_ghosts() {
 
 int main(){
 	
-	printf("\n\n\n\n*********TESTING BIG MAZE*********\n");
+	printf("\n\n\n\n*********TESTING BIG MAZE WITH SINGLE GHOST*********\n");
 	/*test big ghost maze with ghosts*/
-	printf("\n*****WITH ghosts*****\n\n");
+	printf("\n*****WITH ghosts and waiting ENABLED*****\n\n");
 	get_maze_dimensions_with_ghosts("maze_ghost_inputs/bigGhost.txt");
 	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
@@ -592,8 +621,10 @@ int main(){
 
 		}
 	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/bigGhost.txt");
-	astar_search_with_ghosts();
+	astar_search_with_ghosts(true);
 	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
@@ -602,7 +633,34 @@ int main(){
 		delete [] maze_ghosts[i];
 	}
 	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
 	
+	printf("\n*****WITH ghosts and waiting DISABLED*****\n\n");
+	get_maze_dimensions_with_ghosts("maze_ghost_inputs/bigGhost.txt");
+	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		maze_ghosts[i] = new point*[maze_ghosts_dimensions.cols];
+		for (int j = 0; j<maze_ghosts_dimensions.cols; j++) {
+			maze_ghosts[i][j] = new point[maze_ghosts_dimensions.ghost_possibleStates];
+			
+		}
+	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
+	input_maze_with_ghosts("maze_ghost_inputs/bigGhost.txt");
+	astar_search_with_ghosts(false);
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_ghost.txt");
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
+			delete [] maze_ghosts[i][j];
+		}
+		delete [] maze_ghosts[i];
+	}
+	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
+
 	/*test big ghost maze without ghosts*/
 	printf("\n*****WITHOUT ghosts*****\n\n");
 	get_maze_dimensions("maze_ghost_inputs/bigGhost.txt");
@@ -610,6 +668,7 @@ int main(){
 	for(int i=0;i<maze_dimensions.rows;i++){
 		maze[i] = new point[maze_dimensions.cols];
 	}
+	
 	input_maze("maze_ghost_inputs/bigGhost.txt");
 	astar_search();
 	output_maze("maze_ghost_outputs/big_without_ghost.txt");
@@ -618,9 +677,77 @@ int main(){
 	}
 	delete [] maze;
 	
+	printf("\n\n\n\n*********TESTING BIG MAZE WITH MULTIPLE GHOSTS*********\n");
+	/*test big ghost maze with ghosts*/
+	printf("\n*****WITH ghosts and waiting ENABLED*****\n\n");
+	get_maze_dimensions_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
+	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		maze_ghosts[i] = new point*[maze_ghosts_dimensions.cols];
+		for (int j = 0; j<maze_ghosts_dimensions.cols; j++) {
+			maze_ghosts[i][j] = new point[maze_ghosts_dimensions.ghost_possibleStates];
+			
+		}
+	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
+	input_maze_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
+	astar_search_with_ghosts(true);
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost.txt");
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
+			delete [] maze_ghosts[i][j];
+		}
+		delete [] maze_ghosts[i];
+	}
+	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
+	
+	printf("\n*****WITH ghosts and waiting DISABLED*****\n\n");
+	get_maze_dimensions_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
+	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		maze_ghosts[i] = new point*[maze_ghosts_dimensions.cols];
+		for (int j = 0; j<maze_ghosts_dimensions.cols; j++) {
+			maze_ghosts[i][j] = new point[maze_ghosts_dimensions.ghost_possibleStates];
+			
+		}
+	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
+	input_maze_with_ghosts("maze_ghost_inputs/bigMultipleGhost.txt");
+	astar_search_with_ghosts(false);
+	output_maze_with_ghosts("maze_ghost_outputs/big_with_multiple_ghost.txt");
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
+			delete [] maze_ghosts[i][j];
+		}
+		delete [] maze_ghosts[i];
+	}
+	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
+	
+	/*test big ghost maze without ghosts*/
+	printf("\n*****WITHOUT ghosts*****\n\n");
+	get_maze_dimensions("maze_ghost_inputs/bigMultipleGhost.txt");
+	maze = new point*[maze_dimensions.rows];
+	for(int i=0;i<maze_dimensions.rows;i++){
+		maze[i] = new point[maze_dimensions.cols];
+	}
+	
+	input_maze("maze_ghost_inputs/bigMultipleGhost.txt");
+	astar_search();
+	output_maze("maze_ghost_outputs/big_without_multiple_ghosts.txt");
+	for(int i=0;i<maze_dimensions.rows;i++){
+		delete [] maze[i];
+	}
+	delete [] maze;
+	
 	printf("\n\n\n\n*********TESTING MEDIUM MAZE*********\n");
 	/*test medium ghost maze with ghosts*/
-	printf("\n*****WITH ghosts*****\n\n");
+	printf("\n*****WITH ghosts and waiting ENABLED*****\n\n");
 	get_maze_dimensions_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
 	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
@@ -630,8 +757,10 @@ int main(){
 			
 		}
 	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
-	astar_search_with_ghosts();
+	astar_search_with_ghosts(true);
 	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
@@ -640,6 +769,33 @@ int main(){
 		delete [] maze_ghosts[i];
 	}
 	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
+	
+	printf("\n*****WITH ghosts and waiting DISABLED*****\n\n");
+	get_maze_dimensions_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
+	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		maze_ghosts[i] = new point*[maze_ghosts_dimensions.cols];
+		for (int j = 0; j<maze_ghosts_dimensions.cols; j++) {
+			maze_ghosts[i][j] = new point[maze_ghosts_dimensions.ghost_possibleStates];
+			
+		}
+	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
+	input_maze_with_ghosts("maze_ghost_inputs/mediumGhost.txt");
+	astar_search_with_ghosts(false);
+	output_maze_with_ghosts("maze_ghost_outputs/medium_with_ghost.txt");
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
+			delete [] maze_ghosts[i][j];
+		}
+		delete [] maze_ghosts[i];
+	}
+	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
 	
 	/*test medium ghost maze without ghosts*/
 	printf("\n*****WITHOUT ghosts*****\n\n");
@@ -658,7 +814,7 @@ int main(){
 	
 	printf("\n\n\n\n*********TESTING SMALL MAZE*********\n");
 	/*test small ghost maze with ghosts*/
-	printf("\n*****WITH ghosts*****\n\n");
+	printf("\n*****WITH ghosts and waiting ENABLED*****\n\n");
 	get_maze_dimensions_with_ghosts("maze_ghost_inputs/smallGhost.txt");
 	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
@@ -668,8 +824,10 @@ int main(){
 			
 		}
 	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
 	input_maze_with_ghosts("maze_ghost_inputs/smallGhost.txt");
-	astar_search_with_ghosts();
+	astar_search_with_ghosts(true);
 	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost.txt");
 	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
 		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
@@ -678,6 +836,33 @@ int main(){
 		delete [] maze_ghosts[i];
 	}
 	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
+	
+	printf("\n*****WITH ghosts and waiting DISABLED*****\n\n");
+	get_maze_dimensions_with_ghosts("maze_ghost_inputs/smallGhost.txt");
+	maze_ghosts = new point**[maze_ghosts_dimensions.rows];
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		maze_ghosts[i] = new point*[maze_ghosts_dimensions.cols];
+		for (int j = 0; j<maze_ghosts_dimensions.cols; j++) {
+			maze_ghosts[i][j] = new point[maze_ghosts_dimensions.ghost_possibleStates];
+			
+		}
+	}
+	ghost_row_array = new int[number_of_ghosts];
+	ghost_col_array = new int[number_of_ghosts];
+	input_maze_with_ghosts("maze_ghost_inputs/smallGhost.txt");
+	astar_search_with_ghosts(false);
+	output_maze_with_ghosts("maze_ghost_outputs/small_with_ghost.txt");
+	for(int i=0;i<maze_ghosts_dimensions.rows;i++){
+		for (int j = 0; j < maze_ghosts_dimensions.cols; j++) {
+			delete [] maze_ghosts[i][j];
+		}
+		delete [] maze_ghosts[i];
+	}
+	delete [] maze_ghosts;
+	delete [] ghost_row_array;
+	delete [] ghost_col_array;
 	
 	/*test small ghost maze without ghosts*/
 	printf("\n*****WITHOUT ghosts*****\n\n");
